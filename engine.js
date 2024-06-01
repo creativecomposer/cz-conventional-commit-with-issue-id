@@ -23,7 +23,10 @@ var maxSummaryLength = function(options, answers) {
 
 var filterSubject = function(subject, disableSubjectLowerCase) {
   subject = subject.trim();
-  if (!disableSubjectLowerCase && subject.charAt(0).toLowerCase() !== subject.charAt(0)) {
+  if (
+    !disableSubjectLowerCase &&
+    subject.charAt(0).toLowerCase() !== subject.charAt(0)
+  ) {
     subject =
       subject.charAt(0).toLowerCase() + subject.slice(1, subject.length);
   }
@@ -99,7 +102,10 @@ module.exports = function(options) {
           },
           default: options.defaultSubject,
           validate: function(subject, answers) {
-            var filteredSubject = filterSubject(subject, options.disableSubjectLowerCase);
+            var filteredSubject = filterSubject(
+              subject,
+              options.disableSubjectLowerCase
+            );
             return filteredSubject.length == 0
               ? 'subject is required'
               : filteredSubject.length <= maxSummaryLength(options, answers)
@@ -111,7 +117,10 @@ module.exports = function(options) {
                 ' characters.';
           },
           transformer: function(subject, answers) {
-            var filteredSubject = filterSubject(subject, options.disableSubjectLowerCase);
+            var filteredSubject = filterSubject(
+              subject,
+              options.disableSubjectLowerCase
+            );
             var color =
               filteredSubject.length <= maxSummaryLength(options, answers)
                 ? chalk.green
@@ -159,33 +168,24 @@ module.exports = function(options) {
             return answers.isBreaking;
           }
         },
-
-        {
-          type: 'confirm',
-          name: 'isIssueAffected',
-          message: 'Does this change affect any open issues?',
-          default: options.defaultIssues ? true : false
-        },
-        {
-          type: 'input',
-          name: 'issuesBody',
-          default: '-',
-          message:
-            'If issues are closed, the commit requires a body. Please enter a longer description of the commit itself:\n',
-          when: function(answers) {
-            return (
-              answers.isIssueAffected && !answers.body && !answers.breakingBody
-            );
-          }
-        },
         {
           type: 'input',
           name: 'issues',
           message: 'Add issue references (e.g. "fix #123", "re #123".):\n',
-          when: function(answers) {
-            return answers.isIssueAffected;
-          },
-          default: options.defaultIssues ? options.defaultIssues : undefined
+          default: options.defaultIssues ? options.defaultIssues : undefined,
+          validate: function(issues, answers) {
+            const allowedTypesWithoutIssueId = options.typesWithOptionalIssueIds || [
+              'chore',
+              'docs',
+              'revert'
+            ];
+
+            return (
+              allowedTypesWithoutIssueId.includes(answers.type) ||
+              issues.trim().length > 0 ||
+              'Issue reference is required'
+            );
+          }
         }
       ]).then(function(answers) {
         var wrapOptions = {
@@ -203,7 +203,8 @@ module.exports = function(options) {
         var head = answers.type + scope + ': ' + answers.subject;
 
         // Wrap these lines at options.maxLineWidth characters
-        var body = answers.body ? wrap(answers.body, wrapOptions) : false;
+        var body = answers.body || answers.breakingBody || answers.breaking;
+        body = body ? wrap(body, wrapOptions) : false;
 
         // Apply breaking change prefix, removing it if already present
         var breaking = answers.breaking ? answers.breaking.trim() : '';
@@ -212,7 +213,12 @@ module.exports = function(options) {
           : '';
         breaking = breaking ? wrap(breaking, wrapOptions) : false;
 
-        var issues = answers.issues ? wrap(answers.issues, wrapOptions) : false;
+        var issues = answers.issues
+          ? options.issuePrefix
+            ? options.issuePrefix + answers.issues
+            : answers.issues
+          : '';
+        issues = issues ? wrap(issues, wrapOptions) : false;
 
         commit(filter([head, body, breaking, issues]).join('\n\n'));
       });

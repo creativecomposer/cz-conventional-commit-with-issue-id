@@ -15,7 +15,7 @@ var defaultOptions = {
   maxHeaderWidth: 100
 };
 
-var type = 'func';
+var type = 'feat';
 var scope = 'everything';
 var subject = 'testing123';
 var longBody =
@@ -191,6 +191,20 @@ describe('commit message', function() {
       })
     ).to.equal(`${type}: ${subject}\n\n${longBodySplit}\n\n${issues}`);
   });
+  it('header, body and issues with prefix and w/ out scope', function() {
+    const issuePrefix = 'DAX-';
+    expect(
+      commitMessage(
+        {
+          type,
+          subject,
+          body,
+          issues
+        },
+        { ...defaultOptions, issuePrefix }
+      )
+    ).to.equal(`${type}: ${subject}\n\n${body}\n\n${issuePrefix}${issues}`);
+  });
   it('header, long body and issues w/ scope', function() {
     expect(
       commitMessage({
@@ -278,6 +292,18 @@ describe('validation', function() {
         subject: ''
       })
     ).to.throw('subject is required');
+  });
+  it('feat type requires issue id', function() {
+    ['feat', 'fix', 'refactor', 'perf', 'test', 'build', 'ci'].forEach(type => {
+      expect(() =>
+        commitMessage({
+          type,
+          scope,
+          subject: 'test commit',
+          issues: ''
+        })
+      ).to.throw('Issue reference is required');
+    });
   });
 });
 
@@ -390,14 +416,6 @@ describe('when', function() {
         isBreaking: true
       })
     ).to.be.true);
-  it('issues by default', () =>
-    expect(questionWhen('issues', {})).to.be.undefined);
-  it('issues when isIssueAffected', () =>
-    expect(
-      questionWhen('issues', {
-        isIssueAffected: true
-      })
-    ).to.be.true);
 });
 
 describe('commitlint config header-max-length', function() {
@@ -446,7 +464,7 @@ describe('commitlint config header-max-length', function() {
 
     it('with no environment or commitizen config override', function() {
       return mockOptions(72).then(function(options) {
-        expect(options).to.have.property('maxHeaderWidth', 72);
+        expect(options).to.have.property('maxHeaderWidth', 100);
       });
     });
 
