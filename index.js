@@ -25,7 +25,11 @@ var options = {
     (process.env.CZ_MAX_LINE_WIDTH &&
       parseInt(process.env.CZ_MAX_LINE_WIDTH)) ||
     config.maxLineWidth ||
-    100
+    100,
+  issuePrefix: process.env.CZ_ISSUE_PREFIX || config.issuePrefix || '#',
+  typesWithOptionalIssueIds:
+    process.env.CZ_TYPES_WITH_ISSUES_OPTIONAL ||
+    config.typesWithOptionalIssueIds
 };
 
 (function(options) {
