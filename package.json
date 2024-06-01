@@ -44,7 +44,13 @@
   },
   "config": {
     "commitizen": {
-      "path": "./index.js"
+      "path": "./index.js",
+      "typesWithOptionalIssueIds": [
+        "revert",
+        "docs",
+        "style",
+        "chore"
+      ]
     }
   }
 }
